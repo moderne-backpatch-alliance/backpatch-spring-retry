@@ -230,8 +230,9 @@ public class StatefulRecoveryRetryTests {
 	@Test
 	public void testCacheCapacity() throws Throwable {
 
+		MapRetryContextCache cache = new MapRetryContextCache(1);
 		this.retryTemplate.setRetryPolicy(new SimpleRetryPolicy(1));
-		this.retryTemplate.setRetryContextCache(new MapRetryContextCache(1));
+		this.retryTemplate.setRetryContextCache(cache);
 
 		RetryCallback<Object, Exception> callback = new RetryCallback<Object, Exception>() {
 			@Override
@@ -251,12 +252,14 @@ public class StatefulRecoveryRetryTests {
 
 		try {
 			this.retryTemplate.execute(callback, new DefaultRetryState("bar"));
-			fail("Expected RetryException");
+			fail("Expected RuntimeException");
 		}
-		catch (RetryException e) {
-			String message = e.getMessage();
-			assertTrue("Message does not contain 'capacity': " + message, message.indexOf("capacity") >= 0);
+		catch (RuntimeException e) {
+			assertEquals("Barf!", e.getMessage());
 		}
+
+		assertTrue(cache.containsKey("bar"));
+		assertFalse(cache.containsKey("foo"));
 	}
 
 	@Test

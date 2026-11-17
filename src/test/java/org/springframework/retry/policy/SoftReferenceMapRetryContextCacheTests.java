@@ -16,40 +16,11 @@
 
 package org.springframework.retry.policy;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+public class SoftReferenceMapRetryContextCacheTests extends AbstractMapRetryContextCacheTests {
 
-import org.junit.Test;
-import org.springframework.retry.context.RetryContextSupport;
-
-public class SoftReferenceMapRetryContextCacheTests {
-
-	SoftReferenceMapRetryContextCache cache = new SoftReferenceMapRetryContextCache();
-
-	@Test
-	public void testPut() {
-		RetryContextSupport context = new RetryContextSupport(null);
-		cache.put("foo", context);
-		assertEquals(context, cache.get("foo"));
-	}
-
-	@Test(expected = RetryCacheCapacityExceededException.class)
-	public void testPutOverLimit() {
-		RetryContextSupport context = new RetryContextSupport(null);
-		cache.setCapacity(1);
-		cache.put("foo", context);
-		cache.put("foo", context);
-	}
-
-	@Test
-	public void testRemove() {
-		assertFalse(cache.containsKey("foo"));
-		RetryContextSupport context = new RetryContextSupport(null);
-		cache.put("foo", context);
-		assertTrue(cache.containsKey("foo"));
-		cache.remove("foo");
-		assertFalse(cache.containsKey("foo"));
+	@Override
+	protected AbstractMapRetryContextCache<?> createCache(int capacity, boolean removeEldestEntries) {
+		return new SoftReferenceMapRetryContextCache(capacity, removeEldestEntries);
 	}
 
 }

@@ -231,4 +231,22 @@ public class StatefulRetryIntegrationTests {
 
 	}
 
+	static class SerializedMapRetryContextCache extends AbstractMapRetryContextCache<byte[]> {
+
+		public SerializedMapRetryContextCache() {
+			super(DEFAULT_CAPACITY, true);
+		}
+
+		@Override
+		protected byte[] toValue(RetryContext context) {
+			return org.springframework.util.SerializationUtils.serialize(context);
+		}
+
+		@Override
+		protected RetryContext fromValue(byte[] value) {
+			return (RetryContext) org.springframework.util.SerializationUtils.deserialize(value);
+		}
+
+	}
+
 }

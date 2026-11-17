@@ -90,7 +90,10 @@ public class AnnotationAwareRetryOperationsInterceptor implements IntroductionIn
 
 	private final ConcurrentReferenceHashMap<Object, ConcurrentMap<Method, MethodInterceptor>> delegates = new ConcurrentReferenceHashMap<Object, ConcurrentMap<Method, MethodInterceptor>>();
 
-	private RetryContextCache retryContextCache = new MapRetryContextCache();
+	private RetryContextCache retryContextCache = new MapRetryContextCache(MapRetryContextCache.DEFAULT_CAPACITY, true);
+
+	private RetryContextCache circuitBreakerRetryContextCache = new MapRetryContextCache(
+			MapRetryContextCache.DEFAULT_CAPACITY, false);
 
 	private MethodArgumentsKeyGenerator methodArgumentsKeyGenerator;
 
@@ -115,6 +118,16 @@ public class AnnotationAwareRetryOperationsInterceptor implements IntroductionIn
 	 */
 	public void setRetryContextCache(RetryContextCache retryContextCache) {
 		this.retryContextCache = retryContextCache;
+	}
+
+	/**
+	 * Set the {@link RetryContextCache} to use for stateful retries that are used by
+	 * circuit breakers.
+	 * @param circuitBreakerRetryContextCache the {@link RetryContextCache} to use
+	 * @since 1.3.5
+	 */
+	public void setCircuitBreakerRetryContextCache(RetryContextCache circuitBreakerRetryContextCache) {
+		this.circuitBreakerRetryContextCache = circuitBreakerRetryContextCache;
 	}
 
 	/**
@@ -234,6 +247,7 @@ public class AnnotationAwareRetryOperationsInterceptor implements IntroductionIn
 	private MethodInterceptor getStatefulInterceptor(Object target, Method method, Retryable retryable) {
 		RetryTemplate template = createTemplate(retryable.listeners());
 		template.setRetryContextCache(this.retryContextCache);
+		template.setCircuitBreakerRetryContextCache(this.circuitBreakerRetryContextCache);
 
 		CircuitBreaker circuit = AnnotatedElementUtils.findMergedAnnotation(method, CircuitBreaker.class);
 		if (circuit == null) {

@@ -41,11 +41,14 @@ import org.springframework.retry.backoff.ExponentialBackOffPolicy;
 import org.springframework.retry.backoff.Sleeper;
 import org.springframework.retry.interceptor.RetryInterceptorBuilder;
 import org.springframework.retry.listener.RetryListenerSupport;
+import org.springframework.retry.policy.MapRetryContextCache;
+import org.springframework.retry.policy.RetryContextCache;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 import org.springframework.retry.support.RetryTemplate;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -253,6 +256,43 @@ public class EnableRetryTests {
 		service.service5();
 		assertEquals(12, service.getCount());
 		context.close();
+	}
+
+	@Test
+	public void testAdviceUsesQualifiedRetryContextCaches() {
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(
+				QualifiedRetryContextCachesConfiguration.class);
+		try {
+			DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(advice(context));
+			assertEquals(context.getBean("retryContextCache"),
+					directFieldAccessor.getPropertyValue("retryContextCache"));
+			assertEquals(context.getBean("circuitBreakerRetryContextCache"),
+					directFieldAccessor.getPropertyValue("circuitBreakerRetryContextCache"));
+		}
+		finally {
+			context.close();
+		}
+	}
+
+	@Test
+	public void testAdviceUsesRetryContextCacheWhenSingleInstance() {
+		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(
+				SingleRetryContextCacheConfiguration.class);
+		try {
+			DirectFieldAccessor directFieldAccessor = new DirectFieldAccessor(advice(context));
+			assertEquals(context.getBean("customRetryContextCache"),
+					directFieldAccessor.getPropertyValue("retryContextCache"));
+			assertNotEquals(context.getBean("customRetryContextCache"),
+					directFieldAccessor.getPropertyValue("circuitBreakerRetryContextCache"));
+		}
+		finally {
+			context.close();
+		}
+	}
+
+	private AnnotationAwareRetryOperationsInterceptor advice(AnnotationConfigApplicationContext context) {
+		RetryConfiguration config = context.getBean(RetryConfiguration.class);
+		return (AnnotationAwareRetryOperationsInterceptor) new DirectFieldAccessor(config).getPropertyValue("advice");
 	}
 
 	private Object target(Object target) {
@@ -477,6 +517,33 @@ public class EnableRetryTests {
 		@Bean
 		public NotAnnotatedInterface notAnnotatedInterface() {
 			return new RetryableImplementation();
+		}
+
+	}
+
+	@Configuration
+	@EnableRetry
+	protected static class QualifiedRetryContextCachesConfiguration {
+
+		@Bean
+		RetryContextCache retryContextCache() {
+			return new MapRetryContextCache();
+		}
+
+		@Bean
+		RetryContextCache circuitBreakerRetryContextCache() {
+			return new MapRetryContextCache();
+		}
+
+	}
+
+	@Configuration
+	@EnableRetry
+	protected static class SingleRetryContextCacheConfiguration {
+
+		@Bean
+		RetryContextCache customRetryContextCache() {
+			return new MapRetryContextCache(1024, true);
 		}
 
 	}
