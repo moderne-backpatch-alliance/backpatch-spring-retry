@@ -1,0 +1,21 @@
+schema: osera-patch-evidence/0.1.0
+producer: moderne
+release: 1.3.4.1-backpatch-00001
+baseline: v1.3.4+backpatch.baseline
+fixes:
+  - cve: CVE-2026-41710
+    upstream_fix_url: https://github.com/spring-attic/spring-retry/commit/6f351edae3d3575fffbde3c0f62fef963dacd152
+    advisory_url: https://nvd.nist.gov/vuln/detail/CVE-2026-41710
+    patch_commit_url: https://github.com/moderne-backpatch-alliance/backpatch-spring-retry/commit/6798f3b
+    basis: adapted
+    artifacts:
+      - org.springframework.retry:spring-retry
+    note: New in this release; ported onto 1.3.4; fixed at 1.3.4.1-backpatch-00001 (backpatch-spring-retry@6798f3b).
+tests:
+  commit: 6798f3bd39cec5c8f81740172ccd50b16cedf39a
+  command: mvn -B -T1 -Dossindex.skip=true -Dmaven.test.failure.ignore=true clean test
+  runtime: openjdk version 1.8.0_382, Apache Maven 3.9.16
+  report: spring-retry-1.3.4.1-backpatch-00001-tests.zip
+  report_sha256: dee4a63e1de0d2322c76bc01e4980221afc9ccd38a0b3216c1a901882bf8444e
+  result: pass
+  note: 322 tests at the patch commit, 0 of them skipped by the suite, 0 failed, 0 errors.
